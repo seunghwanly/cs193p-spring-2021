@@ -7,6 +7,16 @@
 
 import SwiftUI // imports when we build UIs
 
+/// used Enum declaration for theme selection
+enum CardThemeStyle : String, Equatable, CaseIterable {
+    case blackTheme = "Black"
+    case amberTheme = "Yellow"
+    case blueTheme = "Blue"
+    case greenaryTheme = "Green"
+    
+    var localizedName: LocalizedStringKey { LocalizedStringKey(rawValue) }
+}
+
 /// `struct`: collection of variables
 /// we can also have some functions in `struct`
 /// there is no inheritence in struct
@@ -20,11 +30,21 @@ import SwiftUI // imports when we build UIs
 /// Every Components means View
 struct ContentView: View {
     
-    /// swift is very strongly typed Array<String> == [String] -> swift knows when it compiles
-    var emojis = ["😭", "🥺", "🧐", "😀", "😎", "🤨", "😵", "🥲", "😇"]
-    /// swift informs it is Int
-//    var emojiCount: Int = 6
-    @State var emojiCount = 4
+    func shuffledEmojis(_ size: Int) -> [String] {
+        let standardEmojis: [String] = ["😭", "🥺", "🧐", "😀", "😎", "🤨", "😵", "🥲", "😇", "🥶", "🤬", "🤯"]
+        var newlyCreatedEmojis: [String] = standardEmojis
+        while newlyCreatedEmojis.count < size {
+            newlyCreatedEmojis.remove(at: Int.random(in: 0..<newlyCreatedEmojis.count))
+        }
+        newlyCreatedEmojis.shuffle()
+        return newlyCreatedEmojis
+    }
+    
+    /// selected from user
+    @State var selectedTheme: CardThemeStyle = .blackTheme // set default
+    @State var selectedSize: Int = 12
+    
+    let imageDescription = ["circle.grid.cross.left.fill", "circle.grid.cross.up.fill", "circle.grid.cross.right.fill", "circle.grid.cross.down.fill" ]
     
     /// way to declare variable
     /// colon of View -> type / var i: Int
@@ -42,87 +62,54 @@ struct ContentView: View {
     /// to cover inside the View's what the types are
     /// `some`: would be Combiner in most of time
     var body: some View {
-//        /// Kind of Views: Text, Rectangle... ?
-//        /// `Combiners`, arrange in grid, stack on top, etc -> things together
-//
-//        /// `content` turns out to be function
-//        /// returns modified ZStack
-//        ZStack {
-//        /// wrapping things means function
-//        /// ZStack can be used like this
-//
-//            /// bags up to bag -> pretty simple
-//            /// this arguement has label
-//            /// `stroke`: only outside the edge / default : `fill`
-//            RoundedRectangle(cornerRadius: /*@START_MENU_TOKEN@*/25.0/*@END_MENU_TOKEN@*/)
-//                .stroke(lineWidth: 5.0)
-////                .foregroundColor(/*@START_MENU_TOKEN@*/.red/*@END_MENU_TOKEN@*/)
-//            /// every View has function called [.padding()]
-//            /// padding function returns something
-//            /// ->  padded modified View, doesn't return Text -> Modified Text -> create new View !!
-//            /// 3 different Views returned
-//            Text("Hello, World!")
-////                .foregroundColor(Color.orange) // another modifier
-//
-//            /// in sense of they are View, padding can be adjusted
-//
-//        }
-//        .padding(.horizontal)
-//        .foregroundColor(/*@START_MENU_TOKEN@*/.blue/*@END_MENU_TOKEN@*/) // work as default
         VStack {
+            Text("Memorize!").font(.title).bold()
             ScrollView {
-                // GridItem(), .flexible() is default
-                // lazy of accessiing body var
-                // it can be thousand of cards, accessing in View body absolutely when it is necessary
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 65))]) {
-                    // bag of lego maker
-                    // What is identifiable? the object must contain unique sth to identify itself
-                    // Strings don't have identifying things
-                    // so give `id` property like below
-                    // [0..<6] not including six
-                    // [0...6] including six
-                    ForEach(emojis[0..<emojiCount], id: \.self) { emoji in
-                        CardView(content: emoji)
+                    ForEach(shuffledEmojis(selectedSize), id: \.self) { emoji in
+                        CardView(content: emoji, selectedTheme: selectedTheme)
                             .aspectRatio(2/3, contentMode: .fit)
                     }
                 }
                 .foregroundColor(.red)
             }
-            
-            HStack {
-                add
-                Spacer() // grabs all the space
-                remove
-            }
             .font(/*@START_MENU_TOKEN@*/.title/*@END_MENU_TOKEN@*/)
             .padding(.horizontal)
+            
+            /// buttons to change Theme style
+            VStack(alignment: .leading) {
+                Text("Shuffle")
+                    .bold()
+                HStack {
+                    ForEach(0..<CardThemeStyle.allCases.count) { index in
+                        Button {
+                            selectedSize = Int.random(in: 4...12)
+                            selectedTheme = CardThemeStyle.allCases[index]
+                        } label: {
+                            let isPicked = selectedTheme == CardThemeStyle.allCases[index]
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill()
+                                    .foregroundColor(isPicked ? .blue : .white)
+                                VStack {
+                                    Image(systemName:imageDescription[index])
+                                        .aspectRatio(1/1, contentMode:.fit)
+                                        .foregroundColor(isPicked ? .white : .gray)
+                                    Text(CardThemeStyle.allCases[index].localizedName)
+                                        .font(.callout)
+                                        .foregroundColor(isPicked ? .white : .gray)
+                                }
+                            }
+                            .aspectRatio(2/3, contentMode: .fit)
+                            .padding()
+                        }
+                        
+                        
+                    }
+                }
+            }
         }
         .padding(.horizontal)
-        
-    }
-    
-    /// at UI portion it is all of functional programming
-    /// just calling function
-    /// : means behave like
-    
-    var remove: some View {
-        Button {
-            if emojiCount > 1 {
-                emojiCount -= 1
-            }
-        } label: {
-            Image(systemName: "minus.circle")
-        }
-    }
-    
-    var add: some View {
-        Button {
-            if emojiCount < emojis.count {
-                emojiCount += 1
-            }
-        } label: {
-            Image(systemName: "plus.circle")
-        }
     }
 }
 
@@ -133,10 +120,9 @@ struct ContentView_Previews: PreviewProvider {
 }
 
 struct CardView: View {
+    
     var content: String
-    /// variables must have value
-    /// user's value wins the default value !
-    @State var isFacedUp: Bool = true // [@State] is not gonna used well
+    var selectedTheme: CardThemeStyle
     
     var body: some View {
         ZStack {
@@ -144,23 +130,19 @@ struct CardView: View {
             /// `var`: sth gonna change
             /// `let`: used in constant variables
             /// shape does not need Type, automatically swift look at the context
-            let shape = RoundedRectangle(cornerRadius: 20)
-            if isFacedUp {
-                /// the way to fill inner color with ZStack
-                /// cannot fill inner color with just one RoundedRectangle
-                shape.fill().foregroundColor(.white)
-                // fills the inner side
-                shape.strokeBorder(lineWidth: 3.0)
-                Text(content).font(.largeTitle)
-            } else {
-                shape.fill()
+            let shape = RoundedRectangle(cornerRadius: 12)
+            switch selectedTheme {
+            case CardThemeStyle.amberTheme:
+                shape.fill().foregroundColor(.yellow)
+            case CardThemeStyle.blackTheme:
+                shape.fill().foregroundColor(.black)
+            case CardThemeStyle.blueTheme:
+                shape.fill().foregroundColor(/*@START_MENU_TOKEN@*/.blue/*@END_MENU_TOKEN@*/)
+            case CardThemeStyle.greenaryTheme:
+                shape.fill().foregroundColor(.green)
             }
-        }
-        .onTapGesture {
-            /// regular functions
-            /// self property is immutable !! cannot be modified !!
-            /// when the state changes it all the Views are rebuilt (it rebuilds its body)
-            isFacedUp = !isFacedUp
+            /// set content
+            Text(content)
         }
     }
 }
