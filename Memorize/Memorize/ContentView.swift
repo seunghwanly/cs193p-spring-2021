@@ -33,7 +33,7 @@ struct ContentView: View {
     func shuffledEmojis(_ size: Int) -> [String] {
         let standardEmojis: [String] = ["😭", "🥺", "🧐", "😀", "😎", "🤨", "😵", "🥲", "😇", "🥶", "🤬", "🤯"]
         var newlyCreatedEmojis: [String] = standardEmojis
-        while newlyCreatedEmojis.count < size {
+        while newlyCreatedEmojis.count != size {
             newlyCreatedEmojis.remove(at: Int.random(in: 0..<newlyCreatedEmojis.count))
         }
         newlyCreatedEmojis.shuffle()
@@ -45,6 +45,14 @@ struct ContentView: View {
     @State var selectedSize: Int = 12
     
     let imageDescription = ["circle.grid.cross.left.fill", "circle.grid.cross.up.fill", "circle.grid.cross.right.fill", "circle.grid.cross.down.fill" ]
+    
+    /// retrieve the screen size
+    let width = UIScreen.main.bounds.width
+    let height = UIScreen.main.bounds.height
+    
+    func widthThatBestFits(_ cardCount: Int) -> (min: CGFloat, max: CGFloat) {
+        return (width / CGFloat(selectedSize), width * 0.20)
+    }
     
     /// way to declare variable
     /// colon of View -> type / var i: Int
@@ -62,10 +70,13 @@ struct ContentView: View {
     /// to cover inside the View's what the types are
     /// `some`: would be Combiner in most of time
     var body: some View {
+        let calculatedSize = widthThatBestFits(selectedSize)
+        
         VStack {
             Text("Memorize!").font(.title).bold()
             ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 65))]) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: calculatedSize.min, maximum: calculatedSize.max
+                ))]) {
                     ForEach(shuffledEmojis(selectedSize), id: \.self) { emoji in
                         CardView(content: emoji, selectedTheme: selectedTheme)
                             .aspectRatio(2/3, contentMode: .fit)
