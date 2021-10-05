@@ -21,7 +21,7 @@ struct ContentView: View {
                         }
                 }
             }
-            .foregroundColor(.yellow)
+            .foregroundColor(viewModel.theme.color)
             .padding()
         }
     }
